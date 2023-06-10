@@ -1,0 +1,56 @@
+import numpy as np
+import matplotlib.pyplot as plt
+#datos de entrada
+b = 10 #Value assumed, but it should be given by the problem
+K = 4.32E-4 #Value assumed, mean value of Clay
+T = K*b #Value assumed, mean value of Clay
+S = 1E-2 #Value assumed, mean value of Medium hard clay
+L = 30 #Value assumed, but it should be given by the problem
+Dh = S/T #Hydraulic diffusivity
+
+#discretizar
+N=40
+x=np.linspace(0,L,N)
+dx=L/(N-1)
+print(dx,T)
+
+#condicion inicial
+t=0
+ho=8
+H=np.ones(N)*ho
+#condiciones de frontera
+Ho=0
+H[0]=Ho
+HL=8
+H[-1]=HL
+
+
+#criterio de estabilidad
+destable=dx**2/(2*Dh)
+print(destable)
+
+#solucion en el tiempo
+dt=destable
+
+tfinal=200000
+
+Hdt=H.copy()
+Hsol=[H]
+tsol=[t]
+while t<tfinal:
+  for i in range(N):
+    if i==0:
+      Hdt[i]=Ho
+    elif i==N-1:
+      Hdt[i]= ((Dh*dt/dx**2)*H[i-1]+(1-Dh*dt/dx**2)*H[i])
+    else:
+      Hdt[i]=((Dh*dt/dx**2)*H[i-1]+(1-2*Dh*dt/dx**2)*H[i]+(Dh*dt/dx**2)*H[i+1])
+  H=Hdt.copy()
+  t=t+dt
+  Hsol.append(H)
+  tsol.append(t)
+  
+print(t,H)
+plt.figure(figsize=(20,10))
+for i in range(len(H)):
+  plt.plot(x,Hsol[i])
