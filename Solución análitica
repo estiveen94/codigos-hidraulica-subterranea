@@ -1,0 +1,112 @@
+#Solución analítica 
+#New code to find the time that the aquifer achieve certain value (h=2 or -8, depends on the reference level) in x = L when the level starts to decrease
+#due to lower bondary condition in left side
+
+#Packages required
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+#Usign the ecuation from Craig's Soil Mechanics
+#Boundary conditions
+ho = 8 #Boundary condition
+b = 10 #Value assumed, but it should be given by the problem
+K = 4.32E-4 #Value assumed, mean value of Clay
+T = K*b #Value assumed, mean value of Clay
+S = 1E-2 #Value assumed, mean value of Medium hard clay
+L = 30 #Value assumed, but it should be given by the problem
+Dh = S/T #Hydraulic diffusivity
+
+#Infinite summatory
+ms = 1000 #Value so long in order to replicate the infinite
+Tv = 0 #Start value in 0
+M = 0 #Start value in 0
+ts = np.arange(0,2000,1.1) 
+distancias = np.arange(0,L+2,2) 
+
+#Isobaras
+tiempos = list()
+
+resul = pd.DataFrame()
+resul['tiempos (m)'] = ts
+resul.set_index('tiempos (m)', inplace=True)
+
+suma = 0
+for x in range(0,L,2):
+    tiempos = list()
+    for t in ts:
+        suma = 0
+        for m in range(ms):
+            M = np.pi/2*(2*m+1)
+            Tv = Dh*t/L**2
+            suma += (2*ho/M)*np.sin(M*x/L)*np.exp(-(M**2)*Tv)
+        tiempos.append(suma)
+    resul[str(x)] = tiempos
+  
+
+#I already have the responses from the aquifer, then I wanna transpose the last matrix
+#in order to graph the responses curves
+df = resul.copy()
+df = df.T
+
+#Plot the responses
+plt.figure(figsize=(20,10))
+plt.plot(df.index, df)
+plt.show()
+
+import numpy as np
+import matplotlib.pyplot as plt
+#datos de entrada
+b = 10 #Value assumed, but it should be given by the problem
+K = 4.32E-4 #Value assumed, mean value of Clay
+T = K*b #Value assumed, mean value of Clay
+S = 1E-2 #Value assumed, mean value of Medium hard clay
+L = 30 #Value assumed, but it should be given by the problem
+Dh = S/T #Hydraulic diffusivity
+
+#discretizar
+N=14
+x=np.linspace(0,L,N)
+dx=L/(N-1)
+print(dx,T)
+
+#condicion inicial
+t=0
+ho=8
+H=np.ones(N)*ho
+#condiciones de frontera
+Ho=0
+H[0]=Ho
+HL=8
+H[-1]=HL
+
+
+#criterio de estabilidad
+destable=dx**2/(2*Dh)
+print(destable)
+
+#solucion en el tiempo
+dt=1.1
+
+tfinal=2000
+
+Hdt=H.copy()
+Hsol=[H]
+tsol=[t]
+while t<tfinal:
+  for i in range(N):
+    if i==0:
+      Hdt[i]=Ho
+    elif i==N-1:
+      Hdt[i]= ((Dh*dt/dx**2)*H[i-1]+(1-Dh*dt/dx**2)*H[i])
+    else:
+      Hdt[i]=((Dh*dt/dx**2)*H[i-1]+(1-2*Dh*dt/dx**2)*H[i]+(Dh*dt/dx**2)*H[i+1])
+  H=Hdt.copy()
+  t=t+dt
+  Hsol.append(H)
+  tsol.append(t)
+  
+  #print(t,H)
+plt.figure(figsize=(20,10))
+for i in range(len(H)):
+  plt.plot(x,Hsol[i])
